@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Adivinhação</title>
+    <style>
+        /* Resetando algumas propriedades do body */
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to top, #00c6ff, #0072ff); /* Gradiente do fundo */
+        }
+
+        /* Container centralizado com borda e sombra */
+        .game-container {
+            text-align: center;
+            border: 3px solid #0072ff;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #0072ff;
+            font-size: 2em;
+            margin-bottom: 20px;
+            animation: fadeIn 1s ease-out; /* Animação para o título */
+        }
+
+        p {
+            font-size: 1.2em;
+            margin: 10px 0;
+            color: #444;
+        }
+
+        input, button {
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 1.1em;
+            border-radius: 8px;
+            border: 2px solid #0072ff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, button:hover {
+            transform: scale(1.1); /* Efeito de zoom */
+            box-shadow: 0 0 10px rgba(0, 114, 255, 0.5); /* Efeito de brilho */
+        }
+
+        .message {
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 1.3em;
+            animation: fadeIn 1s ease-out; /* Animação de desvanecimento para as mensagens */
+        }
+
+        .error {
+            color: red;
+            background-color: rgba(255, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .success {
+            color: green;
+            background-color: rgba(0, 255, 0, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .new-game-message {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-top: 30px;
+            display: none;
+            animation: slideIn 1s ease-out;
+        }
+
+        /* Animação de fade para as mensagens */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Animação de slide para a mensagem de novo jogo */
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Animação de "pulse" nos botões */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Melhorando a aparência do botão de reiniciar */
+        button {
+            background-color: #0072ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            animation: pulse 1.5s ease-out infinite; /* Botão pulsa quando está ativo */
+        }
+
+        button:disabled {
+            background-color: #dcdcdc;
+            cursor: not-allowed;
+            animation: none; /* Remove animação quando desativado */
+        }
+
+        /* Melhorando a exibição das tentativas restantes */
+        .attempts-left {
+            font-size: 1.2em;
+            color: #0072ff;
+            margin-top: 10px;
+        }
+
+        /* Animação de balançar o campo de input quando errado */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Jogo de Adivinhação</h1>
+        <p>Adivinhe o número entre 1 e 50</p>
+        <input type="number" id="guess" placeholder="Digite seu palpite" />
+        <button onclick="checkGuess()">Adivinhar</button>
+        <p class="message" id="message"></p>
+        <p>Você tem <span class="attempts-left" id="attempts-left">10</span> tentativas restantes.</p>
+        <button onclick="resetGame()">Reiniciar Jogo</button>
+        <p class="new-game-message" id="new-game-message">Prepare-se para o próximo desafio!</p>
+    </div>
+
+    <script>
+        let targetNumber;
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        // Função para gerar um novo número aleatório entre 1 e 50
+        function generateTargetNumber() {
+            return Math.floor(Math.random() * 50) + 1;
+        }
+
+        // Inicializa o jogo
+        function startGame() {
+            targetNumber = generateTargetNumber();
+            attempts = 0;
+            document.getElementById("guess").value = "";
+            document.getElementById("message").textContent = "";
+            document.getElementById("attempts-left").textContent = maxAttempts;
+            document.getElementById("guess").disabled = false;
+            document.querySelector("button").disabled = false;
+            document.getElementById("new-game-message").style.display = "none"; // Esconde a mensagem de novo jogo
+            document.getElementById("guess").classList.remove("shake"); // Remove a animação de erro do campo de input
+        }
+
+        // Função para verificar o palpite
+        function checkGuess() {
+            const guess = parseInt(document.getElementById("guess").value);  
+            const messageElement = document.getElementById("message");
+            const attemptsLeftElement = document.getElementById("attempts-left");
+
+            if (isNaN(guess)) {
+                messageElement.textContent = "Por favor, insira um número válido!";
+                messageElement.classList.add("error");
+                messageElement.classList.remove("success");
+                return;
+            }
+
+            attempts++;
+
+            // Verificar se o jogador acertou
+            if (guess === targetNumber) {
+                messageElement.textContent = `Parabéns! Você acertou o número em ${attempts} tentativas!`;
+                messageElement.classList.add("success");
+                messageElement.classList.remove("error");
+                document.getElementById("guess").disabled = true;
+                document.querySelector("button").disabled = true;
+            } 
+            // Verificar se o jogador excedeu o número de tentativas
+            else if (attempts >= maxAttempts) {
+                messageElement.textContent = `Você não acertou o número! O número era ${targetNumber}.`;
+                messageElement.classList.add("error");
+                messageElement.classList.remove("success");
+                document.getElementById("guess").disabled = true;
+                document.querySelector("button").disabled = true;
+            } 
+            // Caso o jogador ainda tenha tentativas
+            else {
+                if (guess < targetNumber) {
+                    messageElement.textContent = "O número é maior!";
+                } else {
+                    messageElement.textContent = "O número é menor!";
+                }
+                messageElement.classList.remove("success");
+                messageElement.classList.add("error");
+
+                attemptsLeftElement.textContent = maxAttempts - attempts;
+
+                // Adiciona animação de erro no campo de input
+                document.getElementById("guess").classList.add("shake");
+            }
+        }
+
+        // Função para reiniciar o jogo
+        function resetGame() {
+            startGame();  // Chama a função que reinicializa o jogo
+            document.getElementById("new-game-message").style.display = "block"; // Exibe a mensagem de novo jogo
+        }
+
+        // Inicia o jogo quando a página é carregada
+        startGame();
+    </script>
+</body>
+</html>
